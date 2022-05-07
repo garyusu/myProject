@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GazeTracker</title>
+    <style type="text/css">
+        body {
+            position: relative;
+            background-color:#444444;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button type="button" onclick="window.location.href='/default';">Quick start!</button>
+    </div>
+    <div>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <fieldset>
+                <legend>Try your own video</legend>
+                <label for="video_upload">Upload video: (Maximum 8 MB)</label>
+                <input type="file" id="video_upload" name="video_upload" accept="video/*">
+                <button type="submit">Submit</button>
+            </fieldset>
+        </form>        
+    </div>
+    
+</body>
+</html>

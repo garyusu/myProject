@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GazeTracker</title>
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            position: relative;
+            background-color:#444444;
+        }
+        div.content {
+            width: 1600px;
+            height: 900px;
+            margin: 30px auto;
+        }
+        #Vplayer {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <video id="Vplayer" width="1600" height="900" >
+            <source src="{{ url_for('static', filename = videopath) }}" type="video/mp4">
+        </video>
+    </div>
+    <script type="text/javascript" src="{{url_for('static',filename='js/searchgazer.js')}}"></script>
+    <script>
+        const player = $('#Vplayer');
+
+        var predlist = [];
+        function pred_append(data){
+            let coor = {
+                    x:data.x,
+                    y:data.y
+                };
+            predlist.push(coor);
+        }
+        
+        window.onload = function() {
+            webgazer.setRegression('ridge') /* currently must set regression and tracker */
+            .setTracker('clmtrackr')
+            .setGazeListener(function(data, clock, frm_idx) {
+            if(data!=null)
+
+                console.log('frame: '+frm_idx);
+                pred_append(data);
+                console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */
+                console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
+            })
+            .begin()
+            .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+
+            var width = 320;
+            var height = 240;
+            var topDist = '0px';
+            var leftDist = '0px';
+            
+            var setup = function() {
+                var video = document.getElementById('webgazerVideoFeed');
+                video.style.display = 'hidden';
+                video.style.position = 'absolute';
+                video.style.top = topDist;
+                video.style.left = leftDist;
+                video.width = width;
+                video.height = height;
+                video.style.margin = '0px';
+
+                webgazer.params.imgWidth = width;
+                webgazer.params.imgHeight = height;
+            };
+
+            function checkIfReady() {
+                if (webgazer.isReady()) {
+                    setup();
+                } else {
+                    setTimeout(checkIfReady, 100);
+                }
+            }
+            setTimeout(checkIfReady,100);
+
+            window.onbeforeunload = function() {
+                webgazer.end();
+            };
+
+        };
+        $('video').on('ended',function(){
+            webgazer.pause();
+            console.log('Video has ended!');
+            $.ajax({
+                    type: "POST",
+                    url: "/run",
+                    data: JSON.stringify(predlist),
+                    contentType: "application/json",
+                    dataType: 'json',
+                    success: function(result) {
+                        console.log("Result:");
+                        console.log(result);
+                    }
+                });
+            setTimeout(function(){
+                window.location.href='/show';
+            },2000);
+        });
+    </script>
+</body>
+</html>

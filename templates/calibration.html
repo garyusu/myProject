@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    	<title>GazeTracker</title>
+
+    	<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+		<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    	<style type="text/css">
+			body {
+			    position: relative;
+				background-color: #FFE4B5;
+			}
+			.calibration_des > p{
+				font-size:x-large;
+			}
+		</style>
+    </head>
+</head>
+<body>
+    <div class="calibration_des">
+        <p>1. 將目光注視游標位置，點擊滑鼠左鍵進行校正。</p>
+        <p>2. 試著將游標移往螢幕各角落處，重複步驟1.。過程中請保持頭部穩定。</p>
+        <p>3. 放開滑鼠，若注視點已準確顯示，即可按下"Esc"鍵使用隨機影片體驗，或"/"鍵輸入特定影片編號。</p>
+        <button onclick="window.location.href='/demo';">GO!</button>
+    </div>
+	<script type="text/javascript" src="{{ url_for('static', filename = 'js/searchgazer0.js') }}"></script>
+	<canvas id="myCanvas"></canvas>
+	<script>
+	window.onload = function() {
+		window.localStorage.clear();
+		webgazer.setRegression('ridge') /* currently must set regression and tracker */
+		.setTracker('clmtrackr')
+		.setGazeListener(function(data, clock) {
+		 //   console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */
+		 //   console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
+		})
+		.begin()
+		.showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+		
+		var width = 320;
+		var height = 240;
+		var topDist = '0px';
+		var leftDist = '1600px';
+		
+		var setup = function() {
+			var video = document.getElementById('webgazerVideoFeed');
+			video.style.display = 'block';
+			video.style.position = 'absolute';
+			video.style.top = topDist;
+			video.style.left = leftDist;
+			video.width = width;
+			video.height = height;
+			video.style.margin = '0px';
+
+			webgazer.params.imgWidth = width;
+			webgazer.params.imgHeight = height;
+
+			var overlay = document.createElement('canvas');				// changed 11/8 start 
+			overlay.id = 'overlay';
+			overlay.style.position = 'absolute';
+			overlay.width = width;
+			overlay.height = height;
+			overlay.style.top = topDist;
+			overlay.style.left = leftDist;
+			overlay.style.margin = '0px';
+
+			document.body.appendChild(overlay);
+
+			var cl = webgazer.getTracker().clm;
+
+			function drawLoop() {
+				requestAnimFrame(drawLoop);
+				overlay.getContext('2d').clearRect(0,0,width,height);
+				if (cl.getCurrentPosition()) {
+					cl.draw(overlay);
+				}
+			}
+			drawLoop();						// end
+		};
+
+		function checkIfReady() {
+			if (webgazer.isReady()) {
+				setup();
+			} else {
+				setTimeout(checkIfReady, 100);
+			}
+		}
+		setTimeout(checkIfReady,100);
+
+		window.onbeforeunload = function() {
+			webgazer.end();
+		};
+	};
+	</script>
+</body>
+</html>
